@@ -42,7 +42,7 @@ class TestPutDelay(Base):
 
     def test_update_delay(self):
         from stubo.cache import Hash
-        from stubo.cache.queue import get_redis_master
+        from stubo.cache.queue import get_redis_main
 
         self.http_client.fetch(self.get_url('/stubo/api/put/delay_policy?'
                                             'name=x&delay_type=fixed&milliseconds=7'), self.stop)
@@ -51,7 +51,7 @@ class TestPutDelay(Base):
                                             'name=x&delay_type=fixed&milliseconds=8'),
                                self.stop)
         response = self.wait()
-        delay_policy = Hash(get_redis_master()).get('localhost:delay_policy', 'x')
+        delay_policy = Hash(get_redis_main()).get('localhost:delay_policy', 'x')
         self.assertTrue(delay_policy['milliseconds'], 8)
         expect = {"version": self.app.settings.get('stubo_version'),
                   "data": {"message": "Put Delay Policy Finished",

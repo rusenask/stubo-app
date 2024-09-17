@@ -475,14 +475,14 @@ class TestRequestIndex(unittest.TestCase):
         self.hash = DummyHash({})
         self.hash_patch = mock.patch('stubo.cache.Hash', self.hash)
         self.hash_patch.start()
-        self.master = DummyMaster()
-        self.patch_master = mock.patch('stubo.cache.get_redis_master',
-                                       self.master)
-        self.patch_master.start()
+        self.main = DummyMain()
+        self.patch_main = mock.patch('stubo.cache.get_redis_main',
+                                       self.main)
+        self.patch_main.start()
 
     def tearDown(self):
         self.hash_patch.stop() 
-        self.patch_master.stop()
+        self.patch_main.stop()
         
     def _get_cache(self):
         from stubo.cache import Cache
@@ -491,7 +491,7 @@ class TestRequestIndex(unittest.TestCase):
     def test_get_all_saved_request_index_data(self):
         self.hash.set('localhost:converse:saved_request_index', 'first', 
                       ["1", 0])
-        self.master._keys = ['localhost:converse:saved_request_index']              
+        self.main._keys = ['localhost:converse:saved_request_index']              
         response = self._get_cache().get_all_saved_request_index_data()
         self.assertEqual(response, {'converse': {'first': [u'1', 0]}})
         
@@ -501,7 +501,7 @@ class TestRequestIndex(unittest.TestCase):
         self.hash.set('localhost:converse2:saved_request_index', 'first', 
                       ["1", 0])
         
-        self.master._keys = ['localhost:converse:saved_request_index',
+        self.main._keys = ['localhost:converse:saved_request_index',
                              'localhost:converse2:saved_request_index']              
         response = self._get_cache().get_all_saved_request_index_data()
         self.assertEqual(response, {'converse': {'first': [u'1', 0]},
@@ -529,7 +529,7 @@ class DummyModule(object):
         return 1
        
 
-class DummyMaster(object):
+class DummyMain(object):
     
     def __init__(self, keys=None):
         self._keys = keys or []

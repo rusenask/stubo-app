@@ -11,7 +11,7 @@ import logging
 import datetime
 import time
 
-from .queue import String, Hash, Queue, get_redis_master, get_redis_slave
+from .queue import String, Hash, Queue, get_redis_main, get_redis_subordinate
 from stubo.exceptions import exception_response
 from stubo.utils import asbool
 from stubo.model.db import Scenario
@@ -21,7 +21,7 @@ log = logging.getLogger(__name__)
 
 """
 Redis is used for caching
-Keys are replicated from master to slave redis instances in distributed envs
+Keys are replicated from main to subordinate redis instances in distributed envs
 
 Data Structures Used
 
@@ -146,7 +146,7 @@ class Cache(object):
         log.debug("get_scenario_key: host={0}, session_name={1}".format(
             self.host, session_name))
         key = '{0}:sessions'.format(self.host)
-        scenario = self.hash_cls()(get_redis_slave()).get_raw(key, session_name)
+        scenario = self.hash_cls()(get_redis_subordinate()).get_raw(key, session_name)
         if not scenario:
             return None
         return '{0}:{1}'.format(self.host, scenario)
@@ -206,12 +206,12 @@ class Cache(object):
             yield session_info
 
     def get_all_saved_request_index_data(self):
-        master = get_redis_master()
-        keys = master.keys('{0}:*:saved_request_index'.format(self.host))
+        main = get_redis_main()
+        keys = main.keys('{0}:*:saved_request_index'.format(self.host))
         info = {}
         for key in keys:
             scenario_name = key.split(':')[1]
-            info[scenario_name] = self.hash_cls()(master).get_all(key)
+            info[scenario_name] = self.hash_cls()(main).get_all(key)
         return info
 
     def get_sessions_status(self, scenario_name, status=None, local=True):
@@ -223,26 +223,26 @@ class Cache(object):
 
     def delete_caches(self, scenario_name):
         key = self.scenario_key_name(scenario_name)
-        master = get_redis_master()
-        deleted_responses = self.hash_cls()(master).remove(self.get_response_key(
+        main = get_redis_main()
+        deleted_responses = self.hash_cls()(main).remove(self.get_response_key(
             scenario_name))
-        deleted_requests = self.hash_cls()(master).remove(self.get_request_key(
+        deleted_requests = self.hash_cls()(main).remove(self.get_request_key(
             scenario_name))
 
         # delete request indexes
         deleted_request_indexes = []
         for k in (self.get_request_index_key(scenario_name),
                   self.get_saved_request_index_key(scenario_name)):
-            deleted_request_indexes.append(self.hash_cls()(master).remove(k))
+            deleted_request_indexes.append(self.hash_cls()(main).remove(k))
 
-        session_names = self.hash_cls()(master).keys(key)
+        session_names = self.hash_cls()(main).keys(key)
         # log.debug('session_names: {0}'.format(session_names))
         deleted_sessions_map = 0
         if session_names:
             sessions_key = '{0}:sessions'.format(self.host)
             for k in session_names:
-                deleted_sessions_map += self.hash_cls()(master).delete(sessions_key, k)
-        deleted_sessions = self.hash_cls()(master).remove(key)
+                deleted_sessions_map += self.hash_cls()(main).delete(sessions_key, k)
+        deleted_sessions = self.hash_cls()(main).remove(key)
         log.debug('deleted_response: {0}, deleted_requests: {1}, '
                   ', deleted_sessions_map: {2}, deleted_sessions: {3}, '
                   'deleted_request_indexes: {4}'.format(deleted_responses,
@@ -264,7 +264,7 @@ class Cache(object):
 
     def set_delay_policy(self, name, data):
         key = self.get_delay_policy_key()
-        return self.hash_cls()(get_redis_master()).set(key, name, data)
+        return self.hash_cls()(get_redis_main()).set(key, name, data)
 
     def delete_delay_policy(self, names):
         num_deleted = 0
@@ -292,8 +292,8 @@ class Cache(object):
         return self.key_name(scenario_name, "saved_request_index")
 
     def get_request_index_data(self, scenario_name):
-        master = get_redis_master()
-        return self.hash_cls()(master).get_all_raw(self.get_request_index_key(
+        main = get_redis_main()
+        return self.hash_cls()(main).get_all_raw(self.get_request_index_key(
             scenario_name))
 
     def reset_request_index(self, scenario_name):
@@ -305,8 +305,8 @@ class Cache(object):
                         data)
 
     def delete_saved_request_index(self, scenario_name, name):
-        master = get_redis_master()
-        return self.hash_cls()(master).delete(self.get_saved_request_index_key(
+        main = get_redis_main()
+        return self.hash_cls()(main).delete(self.get_saved_request_index_key(
             scenario_name), name)
 
     def get_saved_request_index_data(self, scenario_name, name):
@@ -323,20 +323,20 @@ class Cache(object):
         return key_exists(self.get_request_index_key(scenario_name))
 
     def delete_session_data(self, scenario_name, session):
-        master = get_redis_master()
+        main = get_redis_main()
         keys = (self.get_request_key(scenario_name),
                 self.get_response_key(scenario_name),
                 self.get_request_index_key(scenario_name))
         hashes = [x.format(self.scenario_key_name(scenario_name)) for x in keys]
         for _hash in hashes:
-            keys = self.hash_cls()(master).keys(_hash)
+            keys = self.hash_cls()(main).keys(_hash)
             session_keys = [x for x in keys if x.startswith('{0}:'.format(
                 session))]
             if session_keys:
                 log.debug('deleting {0} from {1}'.format(session_keys, _hash))
                 num_deleted = 0
                 for k in session_keys:
-                    num_deleted += self.hash_cls()(master).delete(_hash, k)
+                    num_deleted += self.hash_cls()(main).delete(_hash, k)
                 log.debug('deleted {0}'.format(num_deleted))
 
     def assert_valid_session(self, scenario_name, session_name):
@@ -355,7 +355,7 @@ class Cache(object):
         # host:sessions -> session_name->scenario_name
         # we can therefore only have one session name per host/scenario
         sessions_key = '{0}:sessions'.format(self.host)
-        scenario_found = self.hash_cls()(get_redis_master()).get_raw(sessions_key,
+        scenario_found = self.hash_cls()(get_redis_main()).get_raw(sessions_key,
                                                                      session_name)
         if scenario_found and scenario_found != scenario_name:
             raise exception_response(400, title='Session {0} can not be '
@@ -391,13 +391,13 @@ class Cache(object):
         num_responses = len(response_ids)
         index = 0
         if num_responses > 1:
-            # stateful response: lookup the response index value stored on master
-            master = get_redis_master()
+            # stateful response: lookup the response index value stored on main
+            main = get_redis_main()
             request_index_name = self.get_request_index_key(scenario_name)
             request_index_key = '{0}:{1}'.format(session_name, request_index_key)
             index = self.get(request_index_name, request_index_key)
             if not index or index < num_responses:
-                index = self.hash_cls()(master).incr(request_index_name, request_index_key)
+                index = self.hash_cls()(main).incr(request_index_name, request_index_key)
             index -= 1
         response_key = '{0}:{1}'.format(session_name, response_ids[index])
         return self.get(self.get_response_key(scenario_name), response_key,
@@ -423,7 +423,7 @@ class Cache(object):
                                                     "'{1}' in record mode, "
                                                     "playback expected ...".format(session_name, scenario_key))
             else:
-                log.warn("slave session data not available! try again in {0} "
+                log.warn("subordinate session data not available! try again in {0} "
                          'secs'.format(retry_interval))
                 time.sleep(retry_interval)
         return session, i
@@ -510,16 +510,16 @@ class Cache(object):
         key = 'stubo_setting'
         if not all_hosts:
             key = '{0}:{1}'.format(self.host, key)
-        return self.hash_cls()(get_redis_master()).set(key, setting, value)
+        return self.hash_cls()(get_redis_main()).set(key, setting, value)
 
     def get_stubo_setting(self, setting=None, all_hosts=False):
         key = 'stubo_setting'
         if not all_hosts:
             key = '{0}:{1}'.format(self.host, key)
         if setting:
-            result = self.hash_cls()(get_redis_slave()).get(key, setting)
+            result = self.hash_cls()(get_redis_subordinate()).get(key, setting)
         else:
-            result = self.hash_cls()(get_redis_slave()).get_all(key)
+            result = self.hash_cls()(get_redis_subordinate()).get_all(key)
         return result
 
     def blacklisted(self):
@@ -550,7 +550,7 @@ def add_request(session, request_id, stub, system_date, stub_number,
     request_key = '{0}:{1}'.format(session_name, request_id)
     request_index_key = get_request_index_hash_key(session, stub_number)
 
-    request_values = cache.hash_cls()(get_redis_slave()).values(cache.get_request_key(
+    request_values = cache.hash_cls()(get_redis_subordinate()).values(cache.get_request_key(
         scenario_name))
     cached_requests = [x for x in request_values if stub.response_ids() == x[0]]
     if len(cached_requests) < request_cache_limit:
@@ -575,4 +575,4 @@ def get_keys(key_pattern, local=False):
 
 
 def get_redis_server(local=True):
-    return get_redis_slave() if local else get_redis_master()
+    return get_redis_subordinate() if local else get_redis_main()

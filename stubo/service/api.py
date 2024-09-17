@@ -419,7 +419,7 @@ def get_response(handler, session_name):
         system_date = session['system_date']
         if not system_date:
             raise exception_response(500,
-                                     title="slave session {0} not available for scenario {1}".format(
+                                     title="subordinate session {0} not available for scenario {1}".format(
                                          session_name, scenario_key))
 
         session['ext_cache'] = user_cache
@@ -918,7 +918,7 @@ def manage_request_api(handler):
 
     cmd_file = handler.get_argument('cmdFile', '')
     response = dict(host_scenarios=get_session_status(handler, all_hosts=all_hosts))
-    cache_loc = handler.get_argument('cache', 'master')
+    cache_loc = handler.get_argument('cache', 'main')
     # get delays and format output (splitting weighted delays into a list)
     delays = get_delay_policy(handler, None, cache_loc).get('data')
     delays = _format_delay_types(delays)

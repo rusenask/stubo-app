@@ -386,7 +386,7 @@ def delete_module_request(handler):
     log.debug('names: {0}'.format(names))
     cmdq = InternalCommandQueue()
     for name in names:
-        # Note: delete and unload from all slaves not just the executing one
+        # Note: delete and unload from all subordinates not just the executing one
         cmdq.add(handler.track.host, 'delete/module?name={0}'.format(name))
     return delete_module(handler.request, names)
 
@@ -398,7 +398,7 @@ def delete_modules_request(handler):
     log.debug('names: {0}'.format(names))
     cmdq = InternalCommandQueue()
     for name in names:
-        # Note: delete and unload from all slaves not just the executing one
+        # Note: delete and unload from all subordinates not just the executing one
         cmdq.add(handler.track.host, 'delete/module?name={0}'.format(name))
     return delete_module(handler.request, names)
 
@@ -420,7 +420,7 @@ def delay_policy_request(handler):
 @stubo_async
 def get_delay_policy_request(handler):
     name = handler.get_argument('name', None)
-    cache = handler.get_argument('cache', 'master')
+    cache = handler.get_argument('cache', 'main')
     return get_delay_policy(handler, name, cache)
 
 

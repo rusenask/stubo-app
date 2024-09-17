@@ -111,7 +111,7 @@ def purge_stubs():
     log.info('purge stubs whereby all sessions in the scenario were last used before {0}'.format(expiry))
 
     db_conn = init_mongo(dbenv).connection
-    slave, master = start_redis(settings)
+    subordinate, main = start_redis(settings)
     response = list_scenarios(host)
     if 'error' in response:
         print response['error']

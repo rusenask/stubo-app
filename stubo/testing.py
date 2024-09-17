@@ -55,9 +55,9 @@ class Base(AsyncHTTPTestCase):
             'redis.host': '127.0.0.1',
             'redis.port': 6379,
             'redis.db': 9,
-            'redis_master.host': '127.0.0.1',
-            'redis_master.port': 6379,
-            'redis_master.db': 9,
+            'redis_main.host': '127.0.0.1',
+            'redis_main.port': 6379,
+            'redis_main.db': 9,
             'request_cache_limit': 10,
         })
 

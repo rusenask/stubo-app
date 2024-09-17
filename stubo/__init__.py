@@ -2,7 +2,7 @@
     stubo
     ~~~~~
     
-    Stub-O-Matic - Enable automated testing by mastering system dependencies. 
+    Stub-O-Matic - Enable automated testing by maining system dependencies. 
     Use when reality is simply not good enough.
      
     :copyright: (c) 2015 by OpenCredo.

@@ -5,7 +5,7 @@
 import logging
 from urlparse import urlparse, parse_qs
 from tornado.util import ObjectDict
-from stubo.cache.queue import Queue, get_redis_master, get_redis_slave
+from stubo.cache.queue import Queue, get_redis_main, get_redis_subordinate
 from stubo.exceptions import HTTPServerError
 from stubo.service.api import delete_module
 
@@ -14,13 +14,13 @@ log = logging.getLogger(__name__)
 class InternalCommandQueue(object):
     """
     Command queue used to store commands that can be asynchronously processed.
-    Commands are put to redis master and read & processed on slaves.
+    Commands are put to redis main and read & processed on subordinates.
     """
     name = 'task_queue'
     
     def __init__(self, redis_server=None):
         self.queue = Queue(self.name, 
-                           server=redis_server or get_redis_slave())
+                           server=redis_server or get_redis_subordinate())
     
     def process(self):
         try:
@@ -48,7 +48,7 @@ class InternalCommandQueue(object):
             'host' : host, 
             'cmd' : cmd
         } 
-        queue = Queue(self.name, get_redis_master())
+        queue = Queue(self.name, get_redis_main())
         queue.put(payload)              
 
     def run_cmd(self, payload):

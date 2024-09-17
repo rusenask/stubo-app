@@ -219,7 +219,7 @@ def get_delay_policy(handler, name, cache_loc):
 
     :param handler: RequestHandler (or TrackRequest, BaseHandler, etc..)
     :param name: Delay name, if None is passed - gets all delays
-    :param cache_loc: Cache location, usually just 'master'
+    :param cache_loc: Cache location, usually just 'main'
     :return: dictionary of dictionaries with scenario information and reference URI and status_code for response
     """
     cache = Cache(get_hostname(handler.request))

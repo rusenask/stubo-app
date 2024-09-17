@@ -63,6 +63,6 @@ def export_stubs():
     else:
         request = DummyRequestHandler()
     init_mongo()
-    slave, master = start_redis({})
+    subordinate, main = start_redis({})
     response = api.export_stubs(request, scenario)
     print json.dumps(response, sort_keys=True, indent=4, separators=(',', ': '))

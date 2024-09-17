@@ -8,15 +8,15 @@ import json
 log = logging.getLogger(__name__)
 
 redis_server = None
-redis_master_server = None
+redis_main_server = None
 
 
-def get_redis_slave():
+def get_redis_subordinate():
     return redis_server
 
 
-def get_redis_master():
-    return redis_master_server
+def get_redis_main():
+    return redis_main_server
 
 
 class QueueIterator(object):

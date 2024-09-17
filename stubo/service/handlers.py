@@ -1127,7 +1127,7 @@ class GetAllDelayPoliciesHandler(RequestHandler):
             }
         }
         """
-        response, status_code = api_v2_get_delay_policy(self, None, "master")
+        response, status_code = api_v2_get_delay_policy(self, None, "main")
         self.set_status(status_code)
         self.write(response)
 
@@ -1154,7 +1154,7 @@ class GetDelayPolicyDetailsHandler(RequestHandler):
         Returns delay policy name and all details about his resource
         :param delay_policy_name: <string> delay policy name
         """
-        response, status_code = api_v2_get_delay_policy(self, delay_policy_name, "master")
+        response, status_code = api_v2_get_delay_policy(self, delay_policy_name, "main")
         self.set_status(status_code)
         self.write(response)
 
